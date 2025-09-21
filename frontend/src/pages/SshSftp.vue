@@ -197,6 +197,11 @@
                 placeholder="upload/filename.txt"
                 class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent backdrop-blur-sm"
               />
+              <div v-if="downloadPath" class="mt-2 text-sm text-gray-400">
+                <div>📁 Current path: {{ currentPath }}</div>
+                <div>📄 Selected file: {{ downloadPath }}</div>
+                <div>🔗 Full path: {{ currentPath.endsWith('/') ? currentPath + downloadPath.replace(/^\/+/, '') : currentPath + '/' + downloadPath.replace(/^\/+/, '') }}</div>
+              </div>
             </div>
             
             <button
@@ -235,10 +240,18 @@
                 </div>
               </div>
               
-              <div v-if="!file.isDirectory" class="flex space-x-2">
+              <div v-if="!file.isDirectory || file.name.includes('.')" class="flex space-x-2">
+                <button
+                  @click="directDownloadFile(file)"
+                  class="px-3 py-1 text-sm bg-green-500/20 text-green-400 border border-green-400/30 rounded-lg hover:bg-green-500/30 transition-colors"
+                  title="Download trực tiếp"
+                >
+                  ⬇️ Tải
+                </button>
                 <button
                   @click="downloadPath = file.fullPath || file.name"
                   class="px-3 py-1 text-sm bg-orange-500/20 text-orange-400 border border-orange-400/30 rounded-lg hover:bg-orange-500/30 transition-colors"
+                  title="Chọn để download"
                 >
                   📥 Chọn
                 </button>
@@ -318,7 +331,7 @@ export default {
       this.connectionStatus = null
       
       try {
-        const response = await fetch(`${API_BASE}/api/ssh/test`, {
+        const response = await fetch(`${API_BASE}/ssh/test`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -459,6 +472,52 @@ export default {
         }
       } catch (error) {
         this.showMessage('Lỗi: ' + error.message, 'error')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async directDownloadFile(file) {
+      this.loading = true
+      
+      try {
+        const formData = new FormData()
+        formData.append('host', `${this.connection.host}:${this.connection.port}`)
+        formData.append('username', this.connection.username)
+        formData.append('password', this.connection.password)
+        formData.append('remotePath', this.currentPath)
+        formData.append('fileName', file.name)
+
+        console.log('Download request:', {
+          host: `${this.connection.host}:${this.connection.port}`,
+          username: this.connection.username,
+          remotePath: this.currentPath,
+          fileName: file.name,
+          fullPath: file.fullPath
+        })
+
+        const response = await fetch(`${API_BASE}/sftp/download`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          const blob = await response.blob()
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = file.name
+          a.click()
+          window.URL.revokeObjectURL(url)
+          this.showMessage(`Downloaded: ${file.name}`)
+        } else {
+          const error = await response.json()
+          this.showMessage(`Download failed: ${error.error || 'Unknown error'}`, 'error')
+          console.error('Download error:', error)
+        }
+      } catch (error) {
+        this.showMessage('Lỗi: ' + error.message, 'error')
+        console.error('Download exception:', error)
       } finally {
         this.loading = false
       }

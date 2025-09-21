@@ -93,6 +93,29 @@ public class SftpService
                 return Task.FromResult<Stream?>(null);
             }
 
+            var fileInfo = client.Get(remoteFilePath);
+            
+            // For directories that look like files (uploaded incorrectly), try to find actual file inside
+            if (fileInfo.IsDirectory && Path.GetFileName(remoteFilePath).Contains('.'))
+            {
+                Console.WriteLine($"Found directory with file extension: {remoteFilePath}");
+                // This is likely a file uploaded as directory, try to find the actual file content
+                var directoryFiles = client.ListDirectory(remoteFilePath).Where(f => f.IsRegularFile).ToList();
+                if (directoryFiles.Any())
+                {
+                    // Use the first regular file found in the directory
+                    var actualFile = directoryFiles.First();
+                    Console.WriteLine($"Found actual file in directory: {actualFile.FullName}");
+                    remoteFilePath = actualFile.FullName;
+                }
+                else
+                {
+                    Console.WriteLine($"No regular files found in directory: {remoteFilePath}");
+                    client.Disconnect();
+                    return Task.FromResult<Stream?>(null);
+                }
+            }
+
             var downloadStream = new MemoryStream();
             client.DownloadFile(remoteFilePath, downloadStream);
             downloadStream.Position = 0;
@@ -161,7 +184,8 @@ public class SftpService
                     Name = f.Name,
                     Size = f.IsRegularFile ? f.Length : 0,
                     Modified = f.LastWriteTime,
-                    IsDirectory = f.IsDirectory,
+                    // Show both actual files and directories that look like files (have extensions)
+                    IsDirectory = f.IsDirectory && !f.Name.Contains('.'),
                     FullPath = f.FullName
                 })
                 .OrderBy(f => f.IsDirectory ? 0 : 1) // Directories first

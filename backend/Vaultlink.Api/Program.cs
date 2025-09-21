@@ -276,7 +276,8 @@ app.MapPost("/sftp/download", async (HttpRequest request, SftpService sftpServic
         };
 
         var fullRemotePath = remotePath.ToString().TrimEnd('/') + "/" + fileName;
-        Console.WriteLine($"Downloading file from: {fullRemotePath}");
+        Console.WriteLine($"Download request: host={host}:{port}, user={username}, remotePath={remotePath}, fileName={fileName}");
+        Console.WriteLine($"Constructed full path: {fullRemotePath}");
 
         var fileStream = await sftpService.DownloadFileAsync(downloadRequest, fullRemotePath);
         
