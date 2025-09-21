@@ -203,16 +203,36 @@
             </div>
             
             <div v-else class="space-y-4">
-              <div v-for="key in keys" :key="key.keyId" class="glass-key-card group">
+              <div v-for="key in keys" :key="key.id" class="glass-key-card group">
                 <div class="flex items-center justify-between">
                   <div class="flex-1">
-                    <div class="font-semibold text-white text-lg">{{ key.userId }}</div>
-                    <div class="text-gray-300 mt-1">Key ID: {{ key.keyId }}</div>
-                    <div class="text-gray-400 text-sm mt-1">{{ key.algorithm }} {{ key.keySize }} bits</div>
+                    <div class="font-semibold text-white text-lg">{{ key.uid }}</div>
+                    <div class="text-gray-300 mt-1">Key ID: {{ key.id }}</div>
+                    <div class="text-gray-400 text-sm mt-1">RSA-4096 bits</div>
+                    <div class="text-gray-500 text-xs mt-1">{{ formatDate(key.creationTime) }}</div>
                   </div>
                   <div class="flex space-x-3">
-                    <span v-if="key.isPublic" class="px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-sm rounded-full font-medium">Công khai</span>
-                    <span v-if="key.isPrivate" class="px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm rounded-full font-medium">Riêng</span>
+                    <span v-if="key.canEncrypt" class="px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-sm rounded-full font-medium">🔐 Mã hóa</span>
+                    <span v-if="key.canSign" class="px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm rounded-full font-medium">✍️ Ký số</span>
+                    <span v-if="key.isSecret" class="px-3 py-1 bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm rounded-full font-medium">🔑 Private</span>
+                  </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-white/5">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs text-gray-500 font-mono">{{ key.fingerprint }}</div>
+                    <div class="flex space-x-2">
+                      <button 
+                        @click="selectKeyForEncryption(key.id)"
+                        :class="selectedEncryptKey === key.id ? 'bg-blue-600' : 'glass-button-small bg-blue-500/20 hover:bg-blue-500/30'"
+                        class="text-blue-400 hover:text-blue-300 px-3 py-1 rounded-lg text-sm transition-all duration-200"
+                      >
+                        {{ selectedEncryptKey === key.id ? '✓ Đã chọn' : 'Chọn để mã hóa' }}
+                      </button>
+                      <button class="glass-button-small text-red-400 hover:text-red-300 px-3 py-1 rounded-lg text-sm">
+                        🗑️ Xóa
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -265,8 +285,8 @@
                   class="glass-input"
                 >
                   <option value="">Chọn khóa công khai</option>
-                  <option v-for="key in publicKeys" :key="key.keyId" :value="key.keyId">
-                    {{ key.userId }} ({{ key.keyId }})
+                  <option v-for="key in publicKeys" :key="key.id" :value="key.id">
+                    {{ key.uid }} ({{ key.id }})
                   </option>
                 </select>
               </div>
@@ -278,8 +298,8 @@
                   class="glass-input"
                 >
                   <option value="">Không ký số</option>
-                  <option v-for="key in privateKeys" :key="key.keyId" :value="key.keyId">
-                    {{ key.userId }} ({{ key.keyId }})
+                  <option v-for="key in privateKeys" :key="key.id" :value="key.id">
+                    {{ key.uid }} ({{ key.id }})
                   </option>
                 </select>
               </div>
@@ -428,6 +448,7 @@ export default {
       selectedDecryptFile: null,
       decryptResult: null,
       importPassphrase: '',
+      selectedEncryptKey: null,
       tabs: [
         { id: 'keyring', name: 'Quản lý khóa', icon: '🔑' },
         { id: 'encrypt', name: 'Mã hóa/Ký', icon: '🔐' },
@@ -451,10 +472,10 @@ export default {
   },
   computed: {
     publicKeys() {
-      return this.keys.filter(key => key.isPublic)
+      return this.keys.filter(key => key.canEncrypt)
     },
     privateKeys() {
-      return this.keys.filter(key => key.isPrivate)
+      return this.keys.filter(key => key.isSecret)
     }
   },
   async mounted() {
@@ -506,6 +527,7 @@ export default {
       const file = event.target.files[0]
       if (!file) return
 
+      this.loading = true
       const formData = new FormData()
       formData.append('file', file)
 
@@ -525,6 +547,8 @@ export default {
         }
       } catch (error) {
         this.showMessage('Lỗi: ' + error.message, 'error')
+      } finally {
+        this.loading = false
       }
     },
     async importPrivateKey() {
@@ -534,6 +558,7 @@ export default {
         return
       }
 
+      this.loading = true
       const formData = new FormData()
       formData.append('file', file)
       formData.append('passphrase', this.importPassphrase)
@@ -555,6 +580,8 @@ export default {
         }
       } catch (error) {
         this.showMessage('Lỗi: ' + error.message, 'error')
+      } finally {
+        this.loading = false
       }
     },
     handleEncryptFileSelect(event) {
@@ -641,6 +668,19 @@ export default {
       setTimeout(() => {
         this.message = ''
       }, 5000)
+    },
+    formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    selectKeyForEncryption(keyId) {
+      this.selectedEncryptKey = keyId
+      this.showMessage(`Đã chọn khóa ${keyId} để mã hóa`)
     }
   }
 }

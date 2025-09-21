@@ -92,10 +92,10 @@
       </div>
       
       <!-- Interactive Process Steps -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 md:gap-8">
         <!-- Step 1 -->
-        <div class="group relative">
-          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-cyan-400/50 transition-all duration-500 transform hover:-translate-y-2">
+        <div class="group relative min-h-[280px]">
+          <div class="h-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 md:p-8 hover:bg-white/10 hover:border-cyan-400/50 transition-all duration-500 transform hover:-translate-y-2">
             <div class="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-r from-green-400 to-cyan-400 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
               1
             </div>
@@ -108,8 +108,8 @@
         </div>
 
         <!-- Step 2 -->
-        <div class="group relative">
-          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-blue-400/50 transition-all duration-500 transform hover:-translate-y-2">
+        <div class="group relative min-h-[280px]">
+          <div class="h-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 md:p-8 hover:bg-white/10 hover:border-blue-400/50 transition-all duration-500 transform hover:-translate-y-2">
             <div class="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
               2
             </div>
@@ -122,8 +122,8 @@
         </div>
 
         <!-- Step 3 -->
-        <div class="group relative">
-          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-purple-400/50 transition-all duration-500 transform hover:-translate-y-2">
+        <div class="group relative min-h-[280px]">
+          <div class="h-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 md:p-8 hover:bg-white/10 hover:border-purple-400/50 transition-all duration-500 transform hover:-translate-y-2">
             <div class="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
               3
             </div>
@@ -136,8 +136,8 @@
         </div>
 
         <!-- Step 4 -->
-        <div class="group relative">
-          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-pink-400/50 transition-all duration-500 transform hover:-translate-y-2">
+        <div class="group relative min-h-[280px]">
+          <div class="h-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-6 md:p-8 hover:bg-white/10 hover:border-pink-400/50 transition-all duration-500 transform hover:-translate-y-2">
             <div class="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-r from-pink-400 to-red-400 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
               4
             </div>

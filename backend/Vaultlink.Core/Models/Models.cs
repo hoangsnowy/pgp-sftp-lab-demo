@@ -39,6 +39,7 @@ public class SshTestRequest
     public string User { get; set; } = string.Empty;
     public string? PrivateKeyPem { get; set; }
     public string? PrivateKeyPath { get; set; }
+    public string? Password { get; set; }
 }
 
 public class SftpUploadRequest
@@ -48,5 +49,16 @@ public class SftpUploadRequest
     public string User { get; set; } = string.Empty;
     public string? PrivateKeyPem { get; set; }
     public string? PrivateKeyPath { get; set; }
+    public string? Password { get; set; }
     public string RemotePath { get; set; } = string.Empty;
+}
+
+public class SftpListRequest
+{
+    public string Host { get; set; } = string.Empty;
+    public int Port { get; set; } = 22;
+    public string User { get; set; } = string.Empty;
+    public string? PrivateKeyPem { get; set; }
+    public string? PrivateKeyPath { get; set; }
+    public string? RemotePath { get; set; } = "/";
 }

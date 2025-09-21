@@ -1,72 +1,90 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="absolute -inset-10 opacity-30">
+        <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div class="absolute top-0 -right-4 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-8 left-20 w-72 h-72 bg-cyan-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+      </div>
+    </div>
+
     <!-- Header -->
-    <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+    <div class="relative bg-gradient-to-r from-purple-600/80 to-pink-600/80 backdrop-blur-sm border-b border-white/10">
       <div class="max-w-6xl mx-auto px-6 py-12">
         <div class="flex items-center">
-          <div class="bg-white/10 p-3 rounded-2xl mr-4">
-            <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+          <div class="bg-white/10 backdrop-blur-sm p-3 rounded-2xl mr-4 border border-white/20">
+            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
             </svg>
           </div>
           <div>
-            <h1 class="text-3xl font-bold">Quản lý SSH/SFTP</h1>
-            <p class="text-purple-100 mt-2">Kết nối và truyền file một cách an toàn</p>
+            <h1 class="text-3xl font-bold text-white">Quản lý SSH/SFTP</h1>
+            <p class="text-purple-200 mt-2">Kết nối và truyền file một cách an toàn</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div class="relative max-w-6xl mx-auto px-6 py-8 space-y-8">
       <!-- Connection Settings -->
-      <div class="bg-white rounded-2xl shadow-lg p-8">
+      <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-8">
         <div class="flex items-center mb-6">
-          <div class="bg-blue-100 p-3 rounded-xl mr-4">
-            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+          <div class="bg-blue-500/20 backdrop-blur-sm border border-blue-400/30 p-3 rounded-xl mr-4">
+            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
               <path d="M15,9H9V7.5C9,6.12 10.12,5 11.5,5C12.88,5 14,6.12 14,7.5V9M21,16V12C21,10.89 20.11,10 19,10H18V7.5C18,4.46 15.54,2 12.5,2C9.46,2 7,4.46 7,7.5V10H6C4.89,10 4,10.89 4,12V16C4,17.11 4.89,18 6,18H19C20.11,18 21,17.11 21,16Z"/>
             </svg>
           </div>
           <div>
-            <h3 class="text-xl font-bold text-gray-800">Cấu hình kết nối</h3>
-            <p class="text-gray-600">Thiết lập thông tin SSH/SFTP server</p>
+            <h3 class="text-xl font-bold text-white">Cấu hình kết nối</h3>
+            <p class="text-gray-300">Thiết lập thông tin SSH/SFTP server</p>
           </div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Host</label>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Host</label>
             <input
               v-model="connection.host"
               type="text"
               placeholder="localhost"
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Port</label>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Port</label>
             <input
               v-model.number="connection.port"
               type="number"
               placeholder="2222"
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">User</label>
+            <label class="block text-sm font-medium text-gray-300 mb-2">User</label>
             <input
               v-model="connection.user"
               type="text"
               placeholder="demo"
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">SSH Key Path</label>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+            <input
+              v-model="connection.password"
+              type="password"
+              placeholder="pass"
+              class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">SSH Key Path (tùy chọn)</label>
             <input
               v-model="connection.privateKeyPath"
               type="text"
-              placeholder="ops/ssh/keys/demo_ed25519"
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Để trống nếu dùng password"
+              class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
             />
           </div>
         </div>
@@ -94,10 +112,10 @@
         </div>
         
         <!-- Connection Status -->
-        <div v-if="connectionStatus" class="mt-6 p-4 rounded-xl" :class="connectionStatus.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'">
+        <div v-if="connectionStatus" class="mt-6 p-4 rounded-xl backdrop-blur-sm" :class="connectionStatus.success ? 'bg-green-500/20 border border-green-400/50' : 'bg-red-500/20 border border-red-400/50'">
           <div class="flex items-center">
             <span class="mr-2">{{ connectionStatus.success ? '✅' : '❌' }}</span>
-            <span :class="connectionStatus.success ? 'text-green-800' : 'text-red-800'">
+            <span :class="connectionStatus.success ? 'text-green-300' : 'text-red-300'">
               {{ connectionStatus.message }}
             </span>
           </div>
@@ -107,49 +125,49 @@
       <!-- File Operations -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Upload Section -->
-        <div class="bg-white rounded-2xl shadow-lg p-8">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-8">
           <div class="flex items-center mb-6">
-            <div class="bg-green-100 p-3 rounded-xl mr-4">
-              <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+            <div class="bg-green-500/20 backdrop-blur-sm border border-green-400/30 p-3 rounded-xl mr-4">
+              <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
               </svg>
             </div>
             <div>
-              <h3 class="text-xl font-bold text-gray-800">Upload file</h3>
-              <p class="text-gray-600">Tải file lên SFTP server</p>
+              <h3 class="text-xl font-bold text-white">Upload file</h3>
+              <p class="text-gray-300">Tải file lên SFTP server</p>
             </div>
           </div>
           
           <div class="space-y-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Chọn file để upload</label>
-              <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-400 transition-colors">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Chọn file để upload</label>
+              <div class="border-2 border-dashed border-white/20 rounded-xl p-6 text-center hover:border-green-400/50 transition-colors bg-white/5 backdrop-blur-sm">
                 <input
                   ref="uploadFileInput"
                   type="file"
                   @change="handleUploadFileSelect"
                   class="hidden"
                 />
-                <button @click="$refs.uploadFileInput.click()" class="text-green-600 hover:text-green-700">
+                <button @click="$refs.uploadFileInput.click()" class="text-green-400 hover:text-green-300 transition-colors">
                   📁 {{ selectedUploadFile ? selectedUploadFile.name : 'Chọn file để upload' }}
                 </button>
               </div>
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Đường dẫn remote (tùy chọn)</label>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Đường dẫn remote (tùy chọn)</label>
               <input
                 v-model="uploadPath"
                 type="text"
                 placeholder="upload/"
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent backdrop-blur-sm"
               />
             </div>
             
             <button
               @click="uploadFile"
               :disabled="loading || !selectedUploadFile"
-              class="w-full inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+              class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-xl hover:from-green-400 hover:to-green-500 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
             >
               {{ loading ? 'Đang upload...' : '⬆️ Upload file' }}
             </button>
@@ -157,34 +175,34 @@
         </div>
 
         <!-- Download Section -->
-        <div class="bg-white rounded-2xl shadow-lg p-8">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-8">
           <div class="flex items-center mb-6">
-            <div class="bg-orange-100 p-3 rounded-xl mr-4">
-              <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+            <div class="bg-orange-500/20 backdrop-blur-sm border border-orange-400/30 p-3 rounded-xl mr-4">
+              <svg class="w-6 h-6 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
               </svg>
             </div>
             <div>
-              <h3 class="text-xl font-bold text-gray-800">Download file</h3>
-              <p class="text-gray-600">Tải file từ SFTP server</p>
+              <h3 class="text-xl font-bold text-white">Download file</h3>
+              <p class="text-gray-300">Tải file từ SFTP server</p>
             </div>
           </div>
           
           <div class="space-y-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Đường dẫn file remote</label>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Đường dẫn file remote</label>
               <input
                 v-model="downloadPath"
                 type="text"
                 placeholder="upload/filename.txt"
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent backdrop-blur-sm"
               />
             </div>
             
             <button
               @click="downloadFile"
               :disabled="loading || !downloadPath"
-              class="w-full inline-flex items-center justify-center px-6 py-3 bg-orange-600 text-white font-medium rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50"
+              class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl hover:from-orange-400 hover:to-orange-500 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
             >
               {{ loading ? 'Đang download...' : '⬇️ Download file' }}
             </button>
@@ -193,25 +211,25 @@
       </div>
 
       <!-- File List -->
-      <div v-if="fileList.length > 0" class="bg-white rounded-2xl shadow-lg p-8">
+      <div v-if="fileList.length > 0" class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-8">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h3 class="text-xl font-bold text-gray-800">Danh sách file</h3>
-            <p class="text-gray-600">File trên SFTP server</p>
+            <h3 class="text-xl font-bold text-white">Danh sách file</h3>
+            <p class="text-gray-300">File trên SFTP server</p>
           </div>
-          <button @click="listFiles" class="text-purple-600 hover:text-purple-700">
+          <button @click="listFiles" class="text-purple-400 hover:text-purple-300 transition-colors">
             🔄 Tải lại
           </button>
         </div>
         
         <div class="overflow-hidden">
           <div class="grid grid-cols-1 gap-3">
-            <div v-for="file in fileList" :key="file.name" class="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            <div v-for="file in fileList" :key="file.name" class="flex items-center justify-between p-4 border border-white/10 rounded-xl hover:bg-white/5 transition-colors backdrop-blur-sm">
               <div class="flex items-center">
                 <span class="text-2xl mr-3">{{ file.isDirectory ? '📁' : '📄' }}</span>
                 <div>
-                  <div class="font-medium text-gray-900">{{ file.name }}</div>
-                  <div class="text-sm text-gray-500">
+                  <div class="font-medium text-white">{{ file.name }}</div>
+                  <div class="text-sm text-gray-400">
                     {{ file.isDirectory ? 'Thư mục' : `${formatFileSize(file.size)} - ${formatDate(file.modified)}` }}
                   </div>
                 </div>
@@ -220,7 +238,7 @@
               <div v-if="!file.isDirectory" class="flex space-x-2">
                 <button
                   @click="downloadPath = file.fullPath || file.name"
-                  class="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+                  class="px-3 py-1 text-sm bg-orange-500/20 text-orange-400 border border-orange-400/30 rounded-lg hover:bg-orange-500/30 transition-colors"
                 >
                   📥 Chọn
                 </button>
@@ -231,27 +249,27 @@
       </div>
 
       <!-- Quick Demo Section -->
-      <div class="bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl p-8">
+      <div class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
         <div class="text-center">
-          <h3 class="text-xl font-bold text-gray-800 mb-4">🚀 Demo nhanh</h3>
-          <p class="text-gray-600 mb-6">Thử nghiệm quy trình hoàn chỉnh PGP + SFTP</p>
+          <h3 class="text-xl font-bold text-white mb-4">🚀 Demo nhanh</h3>
+          <p class="text-gray-300 mb-6">Thử nghiệm quy trình hoàn chỉnh PGP + SFTP</p>
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div class="bg-white rounded-xl p-4">
+            <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
               <div class="text-2xl mb-2">1️⃣</div>
-              <div class="font-medium">Mã hóa file ở tab PGP</div>
+              <div class="font-medium text-white">Mã hóa file ở tab PGP</div>
             </div>
-            <div class="bg-white rounded-xl p-4">
+            <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
               <div class="text-2xl mb-2">2️⃣</div>
-              <div class="font-medium">Upload file đã mã hóa</div>
+              <div class="font-medium text-white">Upload file đã mã hóa</div>
             </div>
-            <div class="bg-white rounded-xl p-4">
+            <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
               <div class="text-2xl mb-2">3️⃣</div>
-              <div class="font-medium">Download và giải mã</div>
+              <div class="font-medium text-white">Download và giải mã</div>
             </div>
           </div>
           
-          <router-link to="/pgp" class="inline-flex items-center mt-6 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
+          <router-link to="/pgp" class="inline-flex items-center mt-6 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl hover:from-blue-400 hover:to-blue-500 transform hover:scale-105 transition-all duration-300">
             🔐 Đi tới PGP
           </router-link>
         </div>
@@ -259,8 +277,8 @@
     </div>
 
     <!-- Messages -->
-    <div v-if="message" class="fixed bottom-4 right-4 max-w-md">
-      <div class="rounded-xl p-4 shadow-lg" :class="messageType === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-green-100 text-green-800 border border-green-200'">
+    <div v-if="message" class="fixed bottom-4 right-4 max-w-md z-50">
+      <div class="rounded-xl p-4 shadow-lg backdrop-blur-sm" :class="messageType === 'error' ? 'bg-red-500/20 text-red-300 border border-red-400/50' : 'bg-green-500/20 text-green-300 border border-green-400/50'">
         <div class="flex items-center">
           <span class="mr-2">{{ messageType === 'error' ? '❌' : '✅' }}</span>
           {{ message }}
@@ -286,10 +304,11 @@ export default {
       uploadPath: 'upload/',
       downloadPath: '',
       connection: {
-        host: 'localhost',
-        port: 2222,
+        host: 'sftp',
+        port: 22,
         user: 'demo',
-        privateKeyPath: 'ops/ssh/keys/demo_ed25519'
+        password: 'pass',
+        privateKeyPath: ''
       }
     }
   },
@@ -309,12 +328,15 @@ export default {
 
         const result = await response.json()
         
+        // Check both HTTP status and API result
+        const isSuccess = response.ok && result.success
+        
         this.connectionStatus = {
-          success: response.ok,
-          message: result.message || (response.ok ? 'Kết nối SSH thành công!' : 'Kết nối SSH thất bại')
+          success: isSuccess,
+          message: result.message || (isSuccess ? 'Kết nối SSH thành công!' : result.error || 'Kết nối SSH thất bại')
         }
         
-        if (response.ok) {
+        if (isSuccess) {
           this.showMessage('Kết nối SSH thành công!')
         } else {
           this.showMessage(result.error || 'Kết nối SSH thất bại', 'error')
@@ -375,6 +397,7 @@ export default {
       formData.append('host', this.connection.host)
       formData.append('port', this.connection.port.toString())
       formData.append('user', this.connection.user)
+      formData.append('password', this.connection.password)
       formData.append('privateKeyPath', this.connection.privateKeyPath)
       formData.append('remotePath', this.uploadPath + this.selectedUploadFile.name)
 
@@ -468,3 +491,50 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+</style>

@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAntiforgery();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -33,6 +34,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+app.UseAntiforgery();
 
 // PGP endpoints
 app.MapPost("/pgp/generate", async (PgpService pgpService, GenerateKeyRequest request) =>
@@ -62,7 +64,7 @@ app.MapPost("/pgp/import-public", async (PgpService pgpService, IFormFile file) 
         Console.WriteLine($"Failed to import public key: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
-});
+}).DisableAntiforgery();
 
 app.MapPost("/pgp/import-private", async (PgpService pgpService, IFormFile file, string passphrase) =>
 {
@@ -77,7 +79,7 @@ app.MapPost("/pgp/import-private", async (PgpService pgpService, IFormFile file,
         Console.WriteLine($"Failed to import private key: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
-});
+}).DisableAntiforgery();
 
 app.MapGet("/pgp/keys", async (PgpService pgpService) =>
 {
@@ -93,16 +95,30 @@ app.MapGet("/pgp/keys", async (PgpService pgpService) =>
     }
 });
 
-app.MapPost("/pgp/encrypt", async (PgpService pgpService, IFormFile file, string recipientKeyId, bool armor = false, string? signKeyId = null, string? passphrase = null) =>
+app.MapPost("/pgp/encrypt", async (PgpService pgpService, HttpRequest request) =>
 {
     try
     {
+        var form = await request.ReadFormAsync();
+        var file = form.Files["file"];
+        var recipientKeyId = form["recipientKeyId"].ToString();
+        var armor = bool.Parse(form["armor"].ToString() ?? "false");
+        var signKeyId = form["signKeyId"].ToString();
+        var passphrase = form["passphrase"].ToString();
+
+        if (file == null || string.IsNullOrEmpty(recipientKeyId))
+        {
+            return Results.BadRequest(new { Error = "File and recipient key ID are required" });
+        }
+
         using var stream = file.OpenReadStream();
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
         var data = memoryStream.ToArray();
 
-        var encryptedData = await pgpService.EncryptAsync(data, file.FileName, recipientKeyId, armor, signKeyId, passphrase);
+        var encryptedData = await pgpService.EncryptAsync(data, file.FileName, recipientKeyId, armor, 
+            string.IsNullOrEmpty(signKeyId) ? null : signKeyId, 
+            string.IsNullOrEmpty(passphrase) ? null : passphrase);
 
         var fileName = armor ? $"{file.FileName}.asc" : $"{file.FileName}.pgp";
         var contentType = armor ? "text/plain" : "application/octet-stream";
@@ -116,12 +132,21 @@ app.MapPost("/pgp/encrypt", async (PgpService pgpService, IFormFile file, string
         Console.WriteLine($"Failed to encrypt file: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
-});
+}).DisableAntiforgery();
 
-app.MapPost("/pgp/decrypt", async (PgpService pgpService, IFormFile file, string passphrase) =>
+app.MapPost("/pgp/decrypt", async (PgpService pgpService, HttpRequest request) =>
 {
     try
     {
+        var form = await request.ReadFormAsync();
+        var file = form.Files["file"];
+        var passphrase = form["passphrase"].ToString();
+
+        if (file == null || string.IsNullOrEmpty(passphrase))
+        {
+            return Results.BadRequest(new { Error = "File and passphrase are required" });
+        }
+
         using var stream = file.OpenReadStream();
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
@@ -138,7 +163,7 @@ app.MapPost("/pgp/decrypt", async (PgpService pgpService, IFormFile file, string
         Console.WriteLine($"Failed to decrypt file: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
-});
+}).DisableAntiforgery();
 
 // SSH/SFTP endpoints
 app.MapPost("/ssh/test", async (SftpService sftpService, SshTestRequest request) =>
@@ -146,26 +171,42 @@ app.MapPost("/ssh/test", async (SftpService sftpService, SshTestRequest request)
     try
     {
         var result = await sftpService.TestSshConnectionAsync(request);
-        return Results.Ok(new { Success = result });
+        if (result)
+        {
+            return Results.Ok(new { success = true, message = "SSH connection successful" });
+        }
+        else
+        {
+            return Results.BadRequest(new { success = false, error = "SSH connection failed" });
+        }
     }
     catch (Exception ex)
     {
         Console.WriteLine($"SSH test failed for {request.Host}:{request.Port} - {ex.Message}");
-        return Results.BadRequest(new { Error = ex.Message });
+        return Results.BadRequest(new { success = false, error = ex.Message });
     }
 });
 
-app.MapPost("/sftp/upload", async (SftpService sftpService, IFormFile file, string host, int port, string user, string? privateKeyPath, string remotePath) =>
+app.MapPost("/sftp/upload", async (HttpContext context, SftpService sftpService) =>
 {
     try
     {
+        var form = await context.Request.ReadFormAsync();
+        var file = form.Files["file"];
+        
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { Error = "No file provided" });
+        }
+
         var request = new SftpUploadRequest
         {
-            Host = host,
-            Port = port,
-            User = user,
-            PrivateKeyPath = privateKeyPath,
-            RemotePath = remotePath
+            Host = form["host"],
+            Port = int.Parse(form["port"]),
+            User = form["user"],
+            PrivateKeyPath = form["privateKeyPath"],
+            Password = form["password"], // Add password support
+            RemotePath = form["remotePath"]
         };
 
         using var stream = file.OpenReadStream();
@@ -173,7 +214,7 @@ app.MapPost("/sftp/upload", async (SftpService sftpService, IFormFile file, stri
         
         if (result)
         {
-            Console.WriteLine($"Uploaded file {file.FileName} to {host}:{remotePath}");
+            Console.WriteLine($"Uploaded file {file.FileName} to {request.Host}:{request.RemotePath}");
             return Results.Ok(new { Success = true, Message = "File uploaded successfully" });
         }
         else
@@ -183,30 +224,30 @@ app.MapPost("/sftp/upload", async (SftpService sftpService, IFormFile file, stri
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"SFTP upload failed for {host}:{port} - {ex.Message}");
+        Console.WriteLine($"SFTP upload failed - {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
-});
+}).DisableAntiforgery();
 
-app.MapGet("/sftp/list", async (SftpService sftpService, string host, int port, string user, string? privateKeyPath, string remotePath) =>
+app.MapPost("/sftp/list", async (SftpService sftpService, SftpListRequest request) =>
 {
     try
     {
-        var request = new SftpUploadRequest
+        var uploadRequest = new SftpUploadRequest
         {
-            Host = host,
-            Port = port,
-            User = user,
-            PrivateKeyPath = privateKeyPath,
-            RemotePath = remotePath
+            Host = request.Host,
+            Port = request.Port,
+            User = request.User,
+            PrivateKeyPath = request.PrivateKeyPath,
+            RemotePath = request.RemotePath
         };
 
-        var files = await sftpService.ListFilesAsync(request, remotePath);
+        var files = await sftpService.ListFilesAsync(uploadRequest, request.RemotePath ?? "/");
         return Results.Ok(files);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"SFTP list failed for {host}:{port} - {ex.Message}");
+        Console.WriteLine($"SFTP list failed for {request.Host}:{request.Port} - {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 });

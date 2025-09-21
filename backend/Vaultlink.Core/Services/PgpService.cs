@@ -210,27 +210,38 @@ public class PgpService
         if (privateKey == null || encData == null)
             throw new ArgumentException("Unable to find matching private key or passphrase is incorrect");
 
-        using var clearStream = encData.GetDataStream(privateKey);
-        var plainObjectFactory = new PgpObjectFactory(clearStream);
-
-        var message = plainObjectFactory.NextPgpObject();
-        
-        if (message is PgpCompressedData compressedData)
-        {
-            using var compressedStream = compressedData.GetDataStream();
-            var compressedObjectFactory = new PgpObjectFactory(compressedStream);
-            message = compressedObjectFactory.NextPgpObject();
-        }
-
         var result = new DecryptResult();
 
-        if (message is PgpLiteralData literalData)
+        using (var clearStream = encData.GetDataStream(privateKey))
         {
-            result.Filename = literalData.FileName;
-            using var literalStream = literalData.GetInputStream();
-            using var outputStream = new MemoryStream();
-            literalStream.CopyTo(outputStream);
-            result.PlaintextData = outputStream.ToArray();
+            var plainObjectFactory = new PgpObjectFactory(clearStream);
+            var message = plainObjectFactory.NextPgpObject();
+            
+            if (message is PgpCompressedData compressedData)
+            {
+                using (var compressedStream = compressedData.GetDataStream())
+                {
+                    var compressedObjectFactory = new PgpObjectFactory(compressedStream);
+                    message = compressedObjectFactory.NextPgpObject();
+                    
+                    if (message is PgpLiteralData literalData)
+                    {
+                        result.Filename = literalData.FileName;
+                        using var literalStream = literalData.GetInputStream();
+                        using var outputStream = new MemoryStream();
+                        literalStream.CopyTo(outputStream);
+                        result.PlaintextData = outputStream.ToArray();
+                    }
+                }
+            }
+            else if (message is PgpLiteralData literalData)
+            {
+                result.Filename = literalData.FileName;
+                using var literalStream = literalData.GetInputStream();
+                using var outputStream = new MemoryStream();
+                literalStream.CopyTo(outputStream);
+                result.PlaintextData = outputStream.ToArray();
+            }
         }
 
         return Task.FromResult(result);
