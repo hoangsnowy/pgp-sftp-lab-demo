@@ -1,0 +1,58 @@
+# Private keys and sensitive data
+.keys/
+*.key
+*.pem
+*_priv.asc
+*_secret.asc
+
+# Environment files with secrets
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Generated SSH keys
+ops/ssh/keys/*
+!ops/ssh/keys/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backend
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+backend/**/*.suo
+backend/**/*.cache
+backend/**/*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.nuxt/
+frontend/.output/
+frontend/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Docker volumes
+data/
+
+# Test results
+TestResults/
+coverage/

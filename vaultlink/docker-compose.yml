@@ -1,0 +1,57 @@
+services:
+  # Backend ASP.NET API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - KEYSTORE_DIR=/app/.keys
+    volumes:
+      - backend_keys:/app/.keys
+    networks:
+      - vaultlink
+    healthcheck:
+      test: ["CMD-SHELL", "dotnet --version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Vue 3
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE=http://localhost:5080
+    networks:
+      - vaultlink
+    depends_on:
+      - backend
+
+  # SFTP Server (từ ops directory)
+  sftp:
+    image: atmoz/sftp:latest
+    ports:
+      - "2222:22"
+    volumes:
+      - ./ops/sftp/users.conf:/etc/sftp/users.conf:ro
+      - ./ops/ssh/keys:/etc/ssh/ssh_host_keys:ro
+      - sftp_data:/home/demo/upload
+    command: demo:pass:1001:100:upload
+    networks:
+      - vaultlink
+
+volumes:
+  backend_keys:
+  sftp_data:
+
+networks:
+  vaultlink:
+    driver: bridge

@@ -1,0 +1,14 @@
+Hello World!
+
+This is a sample text file for testing PGP encryption and SFTP transfer in the VaultLink demo.
+
+You can use this file to:
+1. Test PGP encryption with different keys
+2. Upload encrypted files to SFTP server
+3. Download and decrypt files
+4. Verify digital signatures
+
+The file contains simple text content to make it easy to verify that 
+encryption/decryption operations are working correctly.
+
+Created: September 21, 2025
