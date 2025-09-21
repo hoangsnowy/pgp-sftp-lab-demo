@@ -138,4 +138,44 @@ public class SftpService
             return Task.FromResult(new List<string>());
         }
     }
+
+    public Task<List<SftpFileInfo>> ListFileDetailsAsync(SftpListRequest request, string remotePath)
+    {
+        try
+        {
+            var connectionInfo = CreateConnectionInfo(request.Host, request.Port, request.User, request.PrivateKeyPem, request.PrivateKeyPath, request.Password);
+
+            using var client = new SftpClient(connectionInfo);
+            client.Connect();
+
+            if (!client.Exists(remotePath))
+            {
+                client.Disconnect();
+                return Task.FromResult(new List<SftpFileInfo>());
+            }
+
+            var files = client.ListDirectory(remotePath)
+                .Where(f => !f.Name.StartsWith(".")) // Skip hidden files
+                .Select(f => new SftpFileInfo
+                {
+                    Name = f.Name,
+                    Size = f.IsRegularFile ? f.Length : 0,
+                    Modified = f.LastWriteTime,
+                    IsDirectory = f.IsDirectory,
+                    FullPath = f.FullName
+                })
+                .OrderBy(f => f.IsDirectory ? 0 : 1) // Directories first
+                .ThenBy(f => f.Name)
+                .ToList();
+
+            client.Disconnect();
+
+            return Task.FromResult(files);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SFTP list details failed: {ex.Message}");
+            return Task.FromResult(new List<SftpFileInfo>());
+        }
+    }
 }

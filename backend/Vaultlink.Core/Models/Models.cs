@@ -1,5 +1,12 @@
 namespace Vaultlink.Core.Models;
 
+public class KeyGenerationRequest
+{
+    public string UserId { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
 public class PgpKeyInfo
 {
     public string Id { get; set; } = string.Empty;
@@ -60,5 +67,27 @@ public class SftpListRequest
     public string User { get; set; } = string.Empty;
     public string? PrivateKeyPem { get; set; }
     public string? PrivateKeyPath { get; set; }
+    public string? Password { get; set; }
     public string? RemotePath { get; set; } = "/";
+}
+
+public class SftpDownloadRequest
+{
+    public string Host { get; set; } = string.Empty;
+    public int Port { get; set; } = 22;
+    public string User { get; set; } = string.Empty;
+    public string? PrivateKeyPem { get; set; }
+    public string? PrivateKeyPath { get; set; }
+    public string? Password { get; set; }
+    public string? RemotePath { get; set; } = "/";
+    public string FilePath { get; set; } = string.Empty;
+}
+
+public class SftpFileInfo
+{
+    public string Name { get; set; } = string.Empty;
+    public long Size { get; set; }
+    public DateTime Modified { get; set; }
+    public bool IsDirectory { get; set; }
+    public string FullPath { get; set; } = string.Empty;
 }

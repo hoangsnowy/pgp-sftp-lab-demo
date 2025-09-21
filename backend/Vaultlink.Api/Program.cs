@@ -239,15 +239,61 @@ app.MapPost("/sftp/list", async (SftpService sftpService, SftpListRequest reques
             Port = request.Port,
             User = request.User,
             PrivateKeyPath = request.PrivateKeyPath,
+            Password = request.Password,
             RemotePath = request.RemotePath
         };
 
-        var files = await sftpService.ListFilesAsync(uploadRequest, request.RemotePath ?? "/");
+        var files = await sftpService.ListFileDetailsAsync(request, request.RemotePath ?? "/");
         return Results.Ok(files);
     }
     catch (Exception ex)
     {
         Console.WriteLine($"SFTP list failed for {request.Host}:{request.Port} - {ex.Message}");
+        return Results.BadRequest(new { Error = ex.Message });
+    }
+});
+
+// SFTP download endpoint
+app.MapPost("/sftp/download", async (HttpRequest request, SftpService sftpService) =>
+{
+    try
+    {
+        var form = await request.ReadFormAsync();
+        var hostPorts = form["host"].ToString().Split(':');
+        var host = hostPorts[0];
+        var port = hostPorts.Length > 1 ? int.Parse(hostPorts[1]) : 22;
+        var username = form["username"];
+        var password = form["password"];
+        var remotePath = form["remotePath"];
+        var fileName = form["fileName"];
+
+        var downloadRequest = new SftpUploadRequest
+        {
+            Host = host,
+            Port = port,
+            User = username,
+            Password = password
+        };
+
+        var fullRemotePath = remotePath.ToString().TrimEnd('/') + "/" + fileName;
+        Console.WriteLine($"Downloading file from: {fullRemotePath}");
+
+        var fileStream = await sftpService.DownloadFileAsync(downloadRequest, fullRemotePath);
+        
+        if (fileStream == null)
+        {
+            return Results.NotFound(new { Error = "File not found" });
+        }
+
+        using var memoryStream = new MemoryStream();
+        await fileStream.CopyToAsync(memoryStream);
+        fileStream.Dispose();
+        
+        return Results.File(memoryStream.ToArray(), "application/octet-stream", fileName);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"SFTP download failed: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 });

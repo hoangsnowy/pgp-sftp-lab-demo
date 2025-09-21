@@ -301,7 +301,7 @@ export default {
       connectionStatus: null,
       fileList: [],
       selectedUploadFile: null,
-      uploadPath: 'upload/',
+      uploadPath: '/upload/',
       downloadPath: '',
       connection: {
         host: 'sftp',
@@ -318,7 +318,7 @@ export default {
       this.connectionStatus = null
       
       try {
-        const response = await fetch(`${API_BASE}/ssh/test`, {
+        const response = await fetch(`${API_BASE}/api/ssh/test`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -432,15 +432,16 @@ export default {
       this.loading = true
       
       try {
+        const formData = new FormData()
+        formData.append('host', `${this.connection.host}:${this.connection.port}`)
+        formData.append('username', this.connection.username)
+        formData.append('password', this.connection.password)
+        formData.append('remotePath', this.currentPath)
+        formData.append('fileName', this.downloadPath.split('/').pop() || this.downloadPath)
+
         const response = await fetch(`${API_BASE}/sftp/download`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ...this.connection,
-            remotePath: this.downloadPath
-          })
+          body: formData
         })
 
         if (response.ok) {
@@ -472,13 +473,18 @@ export default {
     },
     
     formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      if (!dateString) return 'N/A'
+      try {
+        return new Date(dateString).toLocaleDateString('vi-VN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      } catch (error) {
+        return 'Invalid Date'
+      }
     },
     
     showMessage(text, type = 'success') {

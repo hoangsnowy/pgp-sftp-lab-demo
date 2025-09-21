@@ -45,6 +45,8 @@ services:
     command: demo:pass:1001:100:upload
     networks:
       - vaultlink
+    environment:
+      - SFTP_USERS=demo:pass:1001:100:upload
 
 volumes:
   backend_keys:
