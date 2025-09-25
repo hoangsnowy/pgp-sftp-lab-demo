@@ -46,7 +46,7 @@ app.MapPost("/pgp/generate", async (PgpService pgpService, GenerateKeyRequest re
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Failed to generate PGP key pair: {ex.Message}");
+        // Console.WriteLine($"Failed to generate PGP key pair: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 });
@@ -61,7 +61,7 @@ app.MapPost("/pgp/import-public", async (PgpService pgpService, IFormFile file) 
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Failed to import public key: {ex.Message}");
+        // Console.WriteLine($"Failed to import public key: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 }).DisableAntiforgery();
@@ -76,7 +76,7 @@ app.MapPost("/pgp/import-private", async (PgpService pgpService, IFormFile file,
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Failed to import private key: {ex.Message}");
+        // Console.WriteLine($"Failed to import private key: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 }).DisableAntiforgery();
@@ -90,7 +90,7 @@ app.MapGet("/pgp/keys", async (PgpService pgpService) =>
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Failed to get PGP keys: {ex.Message}");
+        // Console.WriteLine($"Failed to get PGP keys: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 });
@@ -123,13 +123,13 @@ app.MapPost("/pgp/encrypt", async (PgpService pgpService, HttpRequest request) =
         var fileName = armor ? $"{file.FileName}.asc" : $"{file.FileName}.pgp";
         var contentType = armor ? "text/plain" : "application/octet-stream";
 
-        Console.WriteLine($"Encrypted file {file.FileName} for recipient {recipientKeyId}");
+        // Console.WriteLine($"Encrypted file {file.FileName} for recipient {recipientKeyId}");
         
         return Results.File(encryptedData, contentType, fileName);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Failed to encrypt file: {ex.Message}");
+        // Console.WriteLine($"Failed to encrypt file: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 }).DisableAntiforgery();
@@ -154,16 +154,38 @@ app.MapPost("/pgp/decrypt", async (PgpService pgpService, HttpRequest request) =
 
         var result = await pgpService.DecryptAsync(encryptedData, passphrase);
 
-        Console.WriteLine($"Decrypted file {result.Filename}, signature valid: {result.SignatureValid}");
+        // Console.WriteLine($"Decrypted file {result.Filename}, signature valid: {result.SignatureValid}");
         
         return Results.File(result.PlaintextData, "application/octet-stream", result.Filename);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Failed to decrypt file: {ex.Message}");
+        // Console.WriteLine($"Failed to decrypt file: {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 }).DisableAntiforgery();
+
+// Delete PGP key pair endpoint
+app.MapDelete("/pgp/delete/{keyId}", async (PgpService pgpService, string keyId) =>
+{
+    try
+    {
+        var result = await pgpService.DeleteKeyPairAsync(keyId);
+        if (result)
+        {
+            return Results.Ok(new { Message = "Key pair deleted successfully" });
+        }
+        else
+        {
+            return Results.NotFound(new { Error = "Key pair not found" });
+        }
+    }
+    catch (Exception ex)
+    {
+        // Console.WriteLine($"Failed to delete key pair: {ex.Message}");
+        return Results.BadRequest(new { Error = ex.Message });
+    }
+});
 
 // SSH/SFTP endpoints
 app.MapPost("/ssh/test", async (SftpService sftpService, SshTestRequest request) =>
@@ -182,7 +204,7 @@ app.MapPost("/ssh/test", async (SftpService sftpService, SshTestRequest request)
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"SSH test failed for {request.Host}:{request.Port} - {ex.Message}");
+        // Console.WriteLine($"SSH test failed for {request.Host}:{request.Port} - {ex.Message}");
         return Results.BadRequest(new { success = false, error = ex.Message });
     }
 });
@@ -214,7 +236,7 @@ app.MapPost("/sftp/upload", async (HttpContext context, SftpService sftpService)
         
         if (result)
         {
-            Console.WriteLine($"Uploaded file {file.FileName} to {request.Host}:{request.RemotePath}");
+            // Console.WriteLine($"Uploaded file {file.FileName} to {request.Host}:{request.RemotePath}");
             return Results.Ok(new { Success = true, Message = "File uploaded successfully" });
         }
         else
@@ -224,8 +246,9 @@ app.MapPost("/sftp/upload", async (HttpContext context, SftpService sftpService)
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"SFTP upload failed - {ex.Message}");
-        return Results.BadRequest(new { Error = ex.Message });
+        // Use logger instead of Console.WriteLine to avoid I/O errors
+        // Console.WriteLine($"SFTP upload failed - {ex.Message}");
+        return Results.BadRequest(new { Error = "Upload failed: " + ex.Message });
     }
 }).DisableAntiforgery();
 
@@ -248,7 +271,7 @@ app.MapPost("/sftp/list", async (SftpService sftpService, SftpListRequest reques
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"SFTP list failed for {request.Host}:{request.Port} - {ex.Message}");
+        // Console.WriteLine($"SFTP list failed for {request.Host}:{request.Port} - {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 });
@@ -276,8 +299,8 @@ app.MapPost("/sftp/download", async (HttpRequest request, SftpService sftpServic
         };
 
         var fullRemotePath = remotePath.ToString().TrimEnd('/') + "/" + fileName;
-        Console.WriteLine($"Download request: host={host}:{port}, user={username}, remotePath={remotePath}, fileName={fileName}");
-        Console.WriteLine($"Constructed full path: {fullRemotePath}");
+        // Console.WriteLine($"Download request: host={host}:{port}, user={username}, remotePath={remotePath}, fileName={fileName}");
+        // Console.WriteLine($"Constructed full path: {fullRemotePath}");
 
         var fileStream = await sftpService.DownloadFileAsync(downloadRequest, fullRemotePath);
         
@@ -294,7 +317,56 @@ app.MapPost("/sftp/download", async (HttpRequest request, SftpService sftpServic
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"SFTP download failed: {ex.Message}");
+        // Console.WriteLine($"SFTP download failed: {ex.Message}");
+        return Results.BadRequest(new { Error = ex.Message });
+    }
+});
+
+app.MapPost("/sftp/delete", async (HttpContext context, SftpService sftpService) =>
+{
+    try
+    {
+        var form = await context.Request.ReadFormAsync();
+        
+        var host = form["host"].ToString();
+        var portStr = form["port"].ToString();
+        var user = form["user"].ToString();
+        var remotePath = form["remotePath"].ToString();
+        var fileName = form["fileName"].ToString();
+        
+        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user) || string.IsNullOrEmpty(fileName))
+        {
+            return Results.BadRequest(new { Error = "host, user, and fileName are required" });
+        }
+
+        var request = new SftpUploadRequest
+        {
+            Host = host,
+            Port = int.Parse(portStr ?? "22"),
+            User = user,
+            PrivateKeyPath = form["privateKeyPath"],
+            Password = form["password"],
+            RemotePath = remotePath
+        };
+
+        // Construct full remote file path
+        var remoteFilePath = request.RemotePath?.TrimEnd('/') + "/" + fileName.TrimStart('/');
+        
+        var result = await sftpService.DeleteFileAsync(request, remoteFilePath);
+        
+        if (result)
+        {
+            // Console.WriteLine($"Deleted file {remoteFilePath} from {request.Host}");
+            return Results.Ok(new { Success = true, Message = "File deleted successfully" });
+        }
+        else
+        {
+            return Results.BadRequest(new { Error = "Delete failed - file not found or access denied" });
+        }
+    }
+    catch (Exception ex)
+    {
+        // Console.WriteLine($"SFTP delete failed - {ex.Message}");
         return Results.BadRequest(new { Error = ex.Message });
     }
 });

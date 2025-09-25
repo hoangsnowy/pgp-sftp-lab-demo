@@ -43,7 +43,7 @@ public class SftpService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SSH connection test failed: {ex.Message}");
+            // Console.WriteLine($"SSH connection test failed: {ex.Message}");
             return Task.FromResult(false);
         }
     }
@@ -57,15 +57,18 @@ public class SftpService
             using var client = new SftpClient(connectionInfo);
             client.Connect();
 
-            var remotePath = Path.Combine(request.RemotePath, fileName).Replace('\\', '/');
+            // Fix path construction for Linux containers
+            var remotePath = $"{request.RemotePath?.TrimEnd('/')}/{fileName}";
             
             // Ensure directory exists
-            var remoteDirectory = Path.GetDirectoryName(remotePath)?.Replace('\\', '/');
+            var remoteDirectory = request.RemotePath?.TrimEnd('/');
             if (!string.IsNullOrEmpty(remoteDirectory) && !client.Exists(remoteDirectory))
             {
+                // Console.WriteLine($"Creating directory: {remoteDirectory}");
                 client.CreateDirectory(remoteDirectory);
             }
 
+            // Console.WriteLine($"Uploading to: {remotePath}");
             client.UploadFile(fileStream, remotePath, true);
             client.Disconnect();
 
@@ -73,7 +76,7 @@ public class SftpService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SFTP upload failed: {ex.Message}");
+            // Console.WriteLine($"SFTP upload failed: {ex.Message}");
             return Task.FromResult(false);
         }
     }
@@ -98,19 +101,19 @@ public class SftpService
             // For directories that look like files (uploaded incorrectly), try to find actual file inside
             if (fileInfo.IsDirectory && Path.GetFileName(remoteFilePath).Contains('.'))
             {
-                Console.WriteLine($"Found directory with file extension: {remoteFilePath}");
+                // Console.WriteLine($"Found directory with file extension: {remoteFilePath}");
                 // This is likely a file uploaded as directory, try to find the actual file content
                 var directoryFiles = client.ListDirectory(remoteFilePath).Where(f => f.IsRegularFile).ToList();
                 if (directoryFiles.Any())
                 {
                     // Use the first regular file found in the directory
                     var actualFile = directoryFiles.First();
-                    Console.WriteLine($"Found actual file in directory: {actualFile.FullName}");
+                    // Console.WriteLine($"Found actual file in directory: {actualFile.FullName}");
                     remoteFilePath = actualFile.FullName;
                 }
                 else
                 {
-                    Console.WriteLine($"No regular files found in directory: {remoteFilePath}");
+                    // Console.WriteLine($"No regular files found in directory: {remoteFilePath}");
                     client.Disconnect();
                     return Task.FromResult<Stream?>(null);
                 }
@@ -126,7 +129,7 @@ public class SftpService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SFTP download failed: {ex.Message}");
+            // Console.WriteLine($"SFTP download failed: {ex.Message}");
             return Task.FromResult<Stream?>(null);
         }
     }
@@ -157,7 +160,7 @@ public class SftpService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SFTP list files failed: {ex.Message}");
+            // Console.WriteLine($"SFTP list files failed: {ex.Message}");
             return Task.FromResult(new List<string>());
         }
     }
@@ -198,8 +201,44 @@ public class SftpService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"SFTP list details failed: {ex.Message}");
+            // Console.WriteLine($"SFTP list details failed: {ex.Message}");
             return Task.FromResult(new List<SftpFileInfo>());
+        }
+    }
+
+    public Task<bool> DeleteFileAsync(SftpUploadRequest request, string remoteFilePath)
+    {
+        try
+        {
+            var connectionInfo = CreateConnectionInfo(request.Host, request.Port, request.User, request.PrivateKeyPem, request.PrivateKeyPath, request.Password);
+
+            using var client = new SftpClient(connectionInfo);
+            client.Connect();
+
+            if (!client.IsConnected)
+            {
+                return Task.FromResult(false);
+            }
+
+            // Check if file exists
+            if (!client.Exists(remoteFilePath))
+            {
+                // Console.WriteLine($"File not found: {remoteFilePath}");
+                client.Disconnect();
+                return Task.FromResult(false);
+            }
+
+            // Delete the file
+            client.Delete(remoteFilePath);
+            // Console.WriteLine($"Successfully deleted file: {remoteFilePath}");
+
+            client.Disconnect();
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            // Console.WriteLine($"SFTP delete failed: {ex.Message}");
+            return Task.FromResult(false);
         }
     }
 }

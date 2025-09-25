@@ -42,11 +42,10 @@ services:
       - "2222:22"
     volumes:
       - sftp_data:/home/demo/upload
-    command: demo:pass:1001:100:upload
+    command: demo:pass:1001:100
     networks:
       - vaultlink
-    environment:
-      - SFTP_USERS=demo:pass:1001:100:upload
+    restart: unless-stopped
 
 volumes:
   backend_keys:

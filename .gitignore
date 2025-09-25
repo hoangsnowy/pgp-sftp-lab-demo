@@ -49,6 +49,13 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.temp
+test.txt
+*test*.txt
+*debug*.sh
+
+# SFTP uploads (except README)
+sftp_uploads/*
+!sftp_uploads/README.md
 
 # Docker volumes
 data/

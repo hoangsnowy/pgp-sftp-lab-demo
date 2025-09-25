@@ -129,7 +129,7 @@ public class PgpService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading key file {keyFile}: {ex.Message}");
+                // Console.WriteLine($"Error reading key file {keyFile}: {ex.Message}");
             }
         }
 
@@ -306,7 +306,7 @@ public class PgpService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading key file {keyFile}: {ex.Message}");
+                // Console.WriteLine($"Error reading key file {keyFile}: {ex.Message}");
             }
         }
 
@@ -336,11 +336,41 @@ public class PgpService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading secret key file {keyFile}: {ex.Message}");
+                // Console.WriteLine($"Error reading secret key file {keyFile}: {ex.Message}");
             }
         }
 
         return null;
+    }
+
+    public Task<bool> DeleteKeyPairAsync(string keyId)
+    {
+        try
+        {
+            var publicKeyPath = Path.Combine(_keystoreDir, $"{keyId}_public.asc");
+            var privateKeyPath = Path.Combine(_keystoreDir, $"{keyId}_secret.asc");
+
+            bool deleted = false;
+
+            if (File.Exists(publicKeyPath))
+            {
+                File.Delete(publicKeyPath);
+                deleted = true;
+            }
+
+            if (File.Exists(privateKeyPath))
+            {
+                File.Delete(privateKeyPath);
+                deleted = true;
+            }
+
+            return Task.FromResult(deleted);
+        }
+        catch (Exception ex)
+        {
+            // Console.WriteLine($"Error deleting key pair {keyId}: {ex.Message}");
+            return Task.FromResult(false);
+        }
     }
 
     private static Org.BouncyCastle.Bcpg.OpenPgp.PgpKeyPair GenerateRsaKeyPair(int strength)

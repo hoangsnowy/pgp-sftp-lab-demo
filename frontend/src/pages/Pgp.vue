@@ -223,13 +223,25 @@
                     <div class="text-xs text-gray-500 font-mono">{{ key.fingerprint }}</div>
                     <div class="flex space-x-2">
                       <button 
+                        @click="viewKeyDetails(key)"
+                        class="glass-button-small bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 px-3 py-1 rounded-lg text-sm transition-all duration-200 border border-cyan-500/30 hover:border-cyan-500/50"
+                        title="Xem chi tiết khóa PGP"
+                      >
+                        👁️ Chi tiết
+                      </button>
+                      <button 
                         @click="selectKeyForEncryption(key.id)"
                         :class="selectedEncryptKey === key.id ? 'bg-blue-600' : 'glass-button-small bg-blue-500/20 hover:bg-blue-500/30'"
                         class="text-blue-400 hover:text-blue-300 px-3 py-1 rounded-lg text-sm transition-all duration-200"
                       >
                         {{ selectedEncryptKey === key.id ? '✓ Đã chọn' : 'Chọn để mã hóa' }}
                       </button>
-                      <button class="glass-button-small text-red-400 hover:text-red-300 px-3 py-1 rounded-lg text-sm">
+                      <button 
+                        @click="deleteKey(key.id)"
+                        :disabled="loading"
+                        class="glass-button-small bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 px-3 py-1 rounded-lg text-sm transition-all duration-200 border border-red-500/30 hover:border-red-500/50"
+                        title="Xóa khóa PGP"
+                      >
                         🗑️ Xóa
                       </button>
                     </div>
@@ -279,33 +291,69 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <label class="block text-sm font-semibold text-gray-300 mb-3">Khóa công khai người nhận</label>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">🔐 Mã hóa cho người nhận</label>
                 <select
                   v-model="encryptForm.recipientKeyId"
                   class="glass-input"
                 >
-                  <option value="">Chọn khóa công khai</option>
+                  <option value="">Không mã hóa - chỉ ký số</option>
                   <option v-for="key in publicKeys" :key="key.id" :value="key.id">
                     {{ key.uid }} ({{ key.id }})
                   </option>
                 </select>
+                <p class="text-xs text-gray-400 mt-1">Chọn để file bị "khóa", chỉ người có private key mới đọc được</p>
               </div>
               
               <div>
-                <label class="block text-sm font-semibold text-gray-300 mb-3">Khóa riêng để ký (tùy chọn)</label>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">✍️ Chữ ký số (tác giả)</label>
                 <select
                   v-model="encryptForm.signKeyId"
                   class="glass-input"
                 >
-                  <option value="">Không ký số</option>
+                  <option value="">Không ký - chỉ mã hóa</option>
                   <option v-for="key in privateKeys" :key="key.id" :value="key.id">
                     {{ key.uid }} ({{ key.id }})
                   </option>
                 </select>
+                <p class="text-xs text-gray-400 mt-1">Chọn để chứng minh bạn là tác giả + file không bị sửa</p>
               </div>
             </div>
             
-            <div v-if="encryptForm.signKeyId" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Output Format Selection - Always visible -->
+            <div class="space-y-4">
+              <label class="block text-sm font-semibold text-gray-300 mb-3">Định dạng output</label>
+              <div class="space-y-3">
+                <label class="flex items-center glass-checkbox-container">
+                  <input
+                    v-model="encryptForm.outputFormat"
+                    value="ascii"
+                    type="radio"
+                    class="sr-only"
+                  />
+                  <div class="glass-radio"></div>
+                  <div class="ml-3">
+                    <span class="text-gray-300 font-medium">📄 ASCII Armor (.asc)</span>
+                    <p class="text-gray-400 text-xs mt-1">Text format - An toàn cho email/web</p>
+                  </div>
+                </label>
+                
+                <label class="flex items-center glass-checkbox-container">
+                  <input
+                    v-model="encryptForm.outputFormat"
+                    value="binary"
+                    type="radio"
+                    class="sr-only"
+                  />
+                  <div class="glass-radio"></div>
+                  <div class="ml-3">
+                    <span class="text-gray-300 font-medium">🔒 Binary (.pgp)</span>
+                    <p class="text-gray-400 text-xs mt-1">Binary format - Nhỏ gọn hơn 33%</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <div v-if="encryptForm.signKeyId" class="grid grid-cols-1 md:grid-cols-1 gap-8">
               <div>
                 <label class="block text-sm font-semibold text-gray-300 mb-3">Mật khẩu khóa riêng</label>
                 <input
@@ -315,26 +363,14 @@
                   class="glass-input"
                 />
               </div>
-              
-              <div class="flex items-end">
-                <label class="flex items-center glass-checkbox-container">
-                  <input
-                    v-model="encryptForm.armor"
-                    type="checkbox"
-                    class="sr-only"
-                  />
-                  <div class="glass-checkbox"></div>
-                  <span class="ml-3 text-gray-300 font-medium">ASCII Armor (.asc)</span>
-                </label>
-              </div>
             </div>
             
             <button
               @click="encryptFile"
-              :disabled="loading || !selectedFile || !encryptForm.recipientKeyId"
+              :disabled="loading || !selectedFile || (!encryptForm.recipientKeyId && !encryptForm.signKeyId)"
               class="glass-button bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
             >
-              {{ loading ? 'Đang mã hóa...' : '🔐 Mã hóa & Download' }}
+              {{ loading ? (encryptForm.recipientKeyId && encryptForm.signKeyId ? 'Đang mã hóa và ký...' : encryptForm.recipientKeyId ? 'Đang mã hóa...' : 'Đang ký số...') : `${encryptForm.recipientKeyId && encryptForm.signKeyId ? '🔐✍️ Mã hóa & ký số' : encryptForm.recipientKeyId ? '🔐 Mã hóa' : '✍️ Ký số'} thành ${encryptForm.outputFormat === 'ascii' ? '.ASC' : '.PGP'}` }}
             </button>
           </div>
         </div>
@@ -429,6 +465,74 @@
         </div>
       </div>
     </div>
+
+    <!-- Key Details Modal -->
+    <div v-if="showKeyModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="closeKeyModal">
+      <div @click.stop class="glass-card p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Chi tiết khóa PGP</h3>
+          <button @click="closeKeyModal" class="text-gray-400 hover:text-white text-2xl">×</button>
+        </div>
+        
+        <div v-if="selectedKeyDetails" class="space-y-6">
+          <!-- Basic Info -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-400 mb-1">Tên & Email</label>
+                <div class="text-white font-medium">{{ selectedKeyDetails.uid }}</div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-400 mb-1">Key ID</label>
+                <div class="text-cyan-400 font-mono">{{ selectedKeyDetails.id }}</div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-400 mb-1">Algorithm</label>
+                <div class="text-white">RSA-4096 bits</div>
+              </div>
+            </div>
+            
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-400 mb-1">Ngày tạo</label>
+                <div class="text-white">{{ formatDate(selectedKeyDetails.creationTime) }}</div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-400 mb-1">Capabilities</label>
+                <div class="flex flex-wrap gap-2 mt-2">
+                  <span v-if="selectedKeyDetails.canEncrypt" class="px-2 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs rounded-full">🔐 Encryption</span>
+                  <span v-if="selectedKeyDetails.canSign" class="px-2 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs rounded-full">✍️ Signing</span>
+                  <span v-if="selectedKeyDetails.isSecret" class="px-2 py-1 bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs rounded-full">🔑 Private Key</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-400 mb-1">Key Type</label>
+                <div class="text-white">{{ selectedKeyDetails.isSecret ? 'Private + Public' : 'Public Only' }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Fingerprint -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-400 mb-2">Fingerprint</label>
+            <div class="bg-black/30 border border-white/10 rounded-lg p-3">
+              <div class="font-mono text-sm text-gray-300 break-all">{{ selectedKeyDetails.fingerprint }}</div>
+              <button @click="copyFingerprint" class="mt-2 text-xs text-cyan-400 hover:text-cyan-300">📋 Copy fingerprint</button>
+            </div>
+          </div>
+          
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+            <button v-if="selectedKeyDetails.canEncrypt" @click="useKeyForEncryption" class="glass-button-small bg-green-500/20 hover:bg-green-500/30 text-green-400">
+              🔐 Use for Encryption
+            </button>
+            <button @click="deleteKey(selectedKeyDetails.id)" class="glass-button-small bg-red-500/20 hover:bg-red-500/30 text-red-400">
+              🗑️ Delete Key
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -449,6 +553,8 @@ export default {
       decryptResult: null,
       importPassphrase: '',
       selectedEncryptKey: null,
+      showKeyModal: false,
+      selectedKeyDetails: null,
       tabs: [
         { id: 'keyring', name: 'Quản lý khóa', icon: '🔑' },
         { id: 'encrypt', name: 'Mã hóa/Ký', icon: '🔐' },
@@ -463,7 +569,7 @@ export default {
         recipientKeyId: '',
         signKeyId: '',
         passphrase: '',
-        armor: true
+        outputFormat: 'ascii'
       },
       decryptForm: {
         passphrase: ''
@@ -482,6 +588,36 @@ export default {
     await this.loadKeys()
   },
   methods: {
+    viewKeyDetails(key) {
+      this.selectedKeyDetails = key
+      this.showKeyModal = true
+    },
+    
+    closeKeyModal() {
+      this.showKeyModal = false
+      this.selectedKeyDetails = null
+    },
+    
+    async copyFingerprint() {
+      if (this.selectedKeyDetails?.fingerprint) {
+        try {
+          await navigator.clipboard.writeText(this.selectedKeyDetails.fingerprint)
+          this.showMessage('📋 Fingerprint copied to clipboard!')
+        } catch (err) {
+          this.showMessage('Failed to copy fingerprint', 'error')
+        }
+      }
+    },
+    
+    useKeyForEncryption() {
+      if (this.selectedKeyDetails) {
+        this.encryptForm.recipientKeyId = this.selectedKeyDetails.id
+        this.activeTab = 'encrypt'
+        this.closeKeyModal()
+        this.showMessage(`🔐 Selected key ${this.selectedKeyDetails.id} for encryption`)
+      }
+    },
+
     async loadKeys() {
       try {
         const response = await fetch(`${API_BASE}/pgp/keys`)
@@ -597,7 +733,7 @@ export default {
       const formData = new FormData()
       formData.append('file', this.selectedFile)
       formData.append('recipientKeyId', this.encryptForm.recipientKeyId)
-      formData.append('armor', this.encryptForm.armor.toString())
+      formData.append('armor', (this.encryptForm.outputFormat === 'ascii').toString())
       
       if (this.encryptForm.signKeyId) {
         formData.append('signKeyId', this.encryptForm.signKeyId)
@@ -615,10 +751,10 @@ export default {
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
-          a.download = this.encryptForm.armor ? `${this.selectedFile.name}.asc` : `${this.selectedFile.name}.pgp`
+          a.download = this.encryptForm.outputFormat === 'ascii' ? `${this.selectedFile.name}.asc` : `${this.selectedFile.name}.pgp`
           a.click()
           window.URL.revokeObjectURL(url)
-          this.showMessage('Mã hóa và tải xuống thành công!')
+          this.showMessage(`Mã hóa thành công! Downloaded as ${this.encryptForm.outputFormat === 'ascii' ? '.asc (ASCII)' : '.pgp (Binary)'}`)
         } else {
           const error = await response.json()
           this.showMessage(error.error || 'Mã hóa file thất bại', 'error')
@@ -681,6 +817,33 @@ export default {
     selectKeyForEncryption(keyId) {
       this.selectedEncryptKey = keyId
       this.showMessage(`Đã chọn khóa ${keyId} để mã hóa`)
+    },
+    async deleteKey(keyId) {
+      console.log('🗑️ Delete key clicked:', keyId)
+      if (!confirm(`Bạn có chắc chắn muốn xóa khóa ${keyId}? Hành động này không thể hoàn tác.`)) {
+        console.log('❌ User cancelled deletion')
+        return
+      }
+
+      console.log('✅ User confirmed deletion, proceeding...')
+      this.loading = true
+      try {
+        const response = await fetch(`${API_BASE}/pgp/delete/${keyId}`, {
+          method: 'DELETE'
+        })
+
+        if (response.ok) {
+          this.showMessage(`Đã xóa khóa ${keyId} thành công!`)
+          await this.loadKeys()
+        } else {
+          const error = await response.json()
+          this.showMessage(error.error || 'Xóa khóa thất bại', 'error')
+        }
+      } catch (error) {
+        this.showMessage('Lỗi: ' + error.message, 'error')
+      } finally {
+        this.loading = false
+      }
     }
   }
 }
@@ -915,6 +1078,35 @@ export default {
   color: white;
   font-size: 0.75rem;
   font-weight: bold;
+}
+
+/* Glass radio button styles */
+.glass-radio {
+  width: 1.25rem;
+  height: 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.glass-checkbox-container input:checked + .glass-radio {
+  background: linear-gradient(45deg, #8b5cf6, #a855f7);
+  border-color: #8b5cf6;
+}
+
+.glass-checkbox-container input:checked + .glass-radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.5rem;
+  height: 0.5rem;
+  background: white;
+  border-radius: 50%;
 }
 
 /* Custom scrollbar */

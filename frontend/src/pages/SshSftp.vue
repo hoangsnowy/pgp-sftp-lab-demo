@@ -27,6 +27,26 @@
     </div>
 
     <div class="relative max-w-6xl mx-auto px-6 py-8 space-y-8">
+      <!-- SFTP Server Info -->
+      <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-2xl p-6 backdrop-blur-sm">
+        <div class="flex items-start space-x-4">
+          <div class="bg-blue-500/20 p-2 rounded-lg flex-shrink-0">
+            <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20C7.59,20 4,16.41 4,12C7.59,4 12,4Z M11,9H13V7H11M11,17H13V11H11V17Z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h4 class="font-semibold text-white mb-2">🚀 Demo SFTP Server</h4>
+            <div class="text-sm text-gray-300 space-y-1">
+              <p><strong>Host:</strong> localhost <span class="text-gray-400">| <strong>Port:</strong> 2222</span></p>
+              <p><strong>Username:</strong> demo <span class="text-gray-400">| <strong>Password:</strong> pass</span></p>
+              <p><strong>Upload Path:</strong> /upload/ <span class="text-gray-400">| <strong>Home:</strong> /home/demo/</span></p>
+            </div>
+            <p class="text-xs text-blue-300 mt-2">💡 Server tự động start với Docker Compose</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Connection Settings -->
       <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-8">
         <div class="flex items-center mb-6">
@@ -255,6 +275,14 @@
                 >
                   📥 Chọn
                 </button>
+                <button
+                  @click="deleteFile(file)"
+                  :disabled="loading"
+                  class="px-3 py-1 text-sm bg-red-500/20 text-red-400 border border-red-400/30 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  title="Xóa file"
+                >
+                  🗑️ Xóa
+                </button>
               </div>
             </div>
           </div>
@@ -317,8 +345,8 @@ export default {
       uploadPath: '/upload/',
       downloadPath: '',
       connection: {
-        host: 'sftp',
-        port: 22,
+        host: 'localhost',
+        port: 2222,
         user: 'demo',
         password: 'pass',
         privateKeyPath: ''
@@ -330,6 +358,8 @@ export default {
       this.loading = true
       this.connectionStatus = null
       
+      console.log('🔌 Testing SFTP connection with:', this.connection)
+      
       try {
         const response = await fetch(`${API_BASE}/ssh/test`, {
           method: 'POST',
@@ -339,7 +369,9 @@ export default {
           body: JSON.stringify(this.connection)
         })
 
+        console.log('📡 SSH test response status:', response.status, response.statusText)
         const result = await response.json()
+        console.log('📋 SSH test result:', result)
         
         // Check both HTTP status and API result
         const isSuccess = response.ok && result.success
@@ -446,7 +478,8 @@ export default {
       
       try {
         const formData = new FormData()
-        formData.append('host', `${this.connection.host}:${this.connection.port}`)
+        formData.append('host', this.connection.host)
+        formData.append('port', this.connection.port)
         formData.append('username', this.connection.username)
         formData.append('password', this.connection.password)
         formData.append('remotePath', this.currentPath)
@@ -489,7 +522,8 @@ export default {
         formData.append('fileName', file.name)
 
         console.log('Download request:', {
-          host: `${this.connection.host}:${this.connection.port}`,
+          host: this.connection.host,
+          port: this.connection.port,
           username: this.connection.username,
           remotePath: this.currentPath,
           fileName: file.name,
@@ -552,6 +586,50 @@ export default {
       setTimeout(() => {
         this.message = ''
       }, 5000)
+    },
+
+    async deleteFile(file) {
+      if (!confirm(`Bạn có chắc chắn muốn xóa file "${file.name}"? Hành động này không thể hoàn tác.`)) {
+        return
+      }
+
+      this.loading = true
+      
+      try {
+        const formData = new FormData()
+        formData.append('host', this.connection.host)
+        formData.append('port', this.connection.port)
+        formData.append('user', this.connection.username)
+        formData.append('password', this.connection.password)
+        formData.append('remotePath', this.currentPath)
+        formData.append('fileName', file.name)
+
+        console.log('Delete request:', {
+          host: this.connection.host,
+          port: this.connection.port,
+          user: this.connection.username,
+          remotePath: this.currentPath,
+          fileName: file.name
+        })
+
+        const response = await fetch(`${API_BASE}/sftp/delete`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          this.showMessage(`Đã xóa file "${file.name}" thành công!`)
+          // Refresh file list
+          await this.listFiles()
+        } else {
+          const error = await response.json()
+          this.showMessage(error.Error || 'Xóa file thất bại', 'error')
+        }
+      } catch (error) {
+        this.showMessage('Lỗi: ' + error.message, 'error')
+      } finally {
+        this.loading = false
+      }
     }
   }
 }
